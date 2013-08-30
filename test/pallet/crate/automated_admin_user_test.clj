@@ -8,6 +8,7 @@
    [pallet.context :as context]
    [pallet.context :as logging]
    [pallet.core.user :refer [default-public-key-path]]
+   [pallet.crate :refer [admin-user]]
    [pallet.crate.automated-admin-user :as automated-admin-user]
    [pallet.crate.automated-admin-user :refer [automated-admin-user]]
    [pallet.crate.ssh-key :as ssh-key]
@@ -140,3 +141,16 @@
     (is
      (lift
       (val (first node-types)) :phase [:verify] :compute compute)))))
+
+(def create-admin-test-spec
+  (server-spec
+   :phases {:bootstrap (plan-fn
+                        (automated-admin-user/create-admin))
+            :verify (plan-fn
+                     (context/with-phase-context
+                       {:kw :automated-admin-user
+                        :msg "Check Automated admin user"}
+                       (exec-checked-script
+                        "is functional"
+                        (pipe (println @SUDO_USER)
+                              ("grep" ~(:username (admin-user)))))))}))
